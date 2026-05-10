@@ -1,0 +1,27 @@
+schema: spec-driven
+
+context: |
+  Tech stack: PHP 8.3, Laravel 13, Filament v5, Livewire v4, Tailwind CSS v4, Vite
+  Domain: Social Inbox SaaS — a multi-tenant platform that aggregates and manages social media messages across channels in a unified inbox.
+  Admin UI is built with Filament v5 (Resources, Pages, Widgets). All UI logic lives in PHP via Filament's fluent API.
+  Frontend assets are bundled with Vite. Run `npm run build` or `composer run dev` to reflect changes.
+  Testing: PHPUnit v12, feature tests preferred. Use `php artisan make:test --phpunit {Name}` to scaffold.
+  Code style enforced by Laravel Pint. Run `vendor/bin/pint --dirty --format agent` after editing PHP files.
+  Commits follow conventional commits convention.
+  Eloquent models use factories and seeders. Factories use `fake()` helper.
+  APIs use Eloquent API Resources with versioning under `api/v1/`.
+
+rules:
+  proposal:
+    - Keep proposals concise — focus on user value and key decisions.
+    - Always include a "Non-goals" section to scope the change clearly.
+    - Reference affected Filament resources, models, or routes when relevant.
+  design:
+    - Describe database schema changes with migration column definitions.
+    - Call out Filament components used (Resource, Page, Widget, Action, etc.).
+    - Note any queue jobs, events, or scheduled commands involved.
+  tasks:
+    - Break tasks into small, independently testable steps (max 2 hours each).
+    - Include a dedicated task for writing PHPUnit tests.
+    - Include a task to run Pint formatting after PHP changes.
+    - List migration tasks before model/controller tasks.
