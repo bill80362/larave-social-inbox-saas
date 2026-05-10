@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Conversations\Pages;
 
+use App\Actions\Reply\SendReplyAction;
 use App\Enums\ConversationStatus;
 use App\Filament\Resources\Conversations\ConversationResource;
 use App\Models\Note;
@@ -9,7 +10,9 @@ use App\Models\User;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
+use Throwable;
 
 class ViewConversation extends ViewRecord
 {
@@ -20,6 +23,33 @@ class ViewConversation extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('reply')
+                ->label('回覆')
+                ->icon('heroicon-o-paper-airplane')
+                ->color('primary')
+                ->schema([
+                    Textarea::make('content')
+                        ->label('回覆內容')
+                        ->required()
+                        ->rows(4),
+                ])
+                ->action(function (array $data): void {
+                    try {
+                        (new SendReplyAction)($this->record, $data['content'], auth()->user());
+                        Notification::make()
+                            ->title('回覆已送出')
+                            ->success()
+                            ->send();
+                        $this->redirect($this->getResource()::getUrl('view', ['record' => $this->record]));
+                    } catch (Throwable $e) {
+                        Notification::make()
+                            ->title('回覆失敗')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+
             Action::make('changeStatus')
                 ->label('變更狀態')
                 ->icon('heroicon-o-arrow-path')

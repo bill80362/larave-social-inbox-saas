@@ -29,6 +29,7 @@ class MessageFactory extends Factory
             'sender_type' => 'contact',
             'sender_id' => 1,
             'sent_at' => fake()->dateTimeBetween('-7 days', 'now'),
+            'platform_message_id' => null,
         ];
     }
 

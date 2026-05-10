@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['conversation_id', 'direction', 'type', 'content', 'attachments', 'sender_type', 'sender_id', 'sent_at'])]
+#[Fillable(['conversation_id', 'direction', 'type', 'content', 'attachments', 'sender_type', 'sender_id', 'sent_at', 'platform_message_id'])]
 class Message extends Model
 {
     use HasFactory;
