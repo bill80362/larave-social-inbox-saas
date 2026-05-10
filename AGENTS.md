@@ -399,3 +399,84 @@ livewire(ListUsers::class)
   - `$view`: `protected string` (not `protected static string`) on `Page` and `Widget` classes
 
 </laravel-boost-guidelines>
+
+---
+
+# Social Inbox SaaS — Project Guide
+
+> 台灣中小企業的全渠道客服收件匣，整合 IG / FB / LINE / Google 商家評論。
+> 詳細產品規劃請參閱 [README.md](README.md)。
+
+## Project Status
+
+早期開發階段（MVP）。目前僅有 Laravel 骨架 + Filament v5 安裝，尚無自訂 Model / Resource / Migration。  
+每個功能都需要從建立 Migration → Model → Filament Resource 開始。
+
+## Domain Concepts
+
+| 概念 | 說明 |
+|------|------|
+| **Channel** | 社群平台連線（IG、FB Messenger、LINE 官方帳號、Google Business） |
+| **Conversation** | 與單一聯絡人的完整對話 thread，跨訊息聚合 |
+| **Message** | 單則訊息或留言（inbound / outbound） |
+| **Contact** | 外部使用者（可能同平台有多個身份） |
+| **Workspace** | 租戶單位；一間企業一個 workspace，含多個 Channel |
+| **Agent** | 客服人員，屬於某個 Workspace |
+
+## Key Workflows
+
+- **Webhook 接收**：各平台的 webhook 打進 `POST /webhook/{platform}`，驗簽後丟入 Queue Job 處理。
+- **訊息回覆**：客服從 Filament 介面回覆，系統呼叫對應平台 API 送出，並寫入 Message 紀錄。
+- **指派對話**：Conversation 可指派給某位 Agent，狀態流轉：`open → pending → resolved`。
+
+## Development Commands
+
+```bash
+# 一鍵啟動（server + queue + logs + vite）
+composer run dev
+
+# 單獨執行
+php artisan serve
+php artisan queue:listen --tries=1 --timeout=0
+npm run dev
+
+# 資料庫
+php artisan migrate
+php artisan db:seed
+
+# 測試
+php artisan test --compact                          # 全部
+php artisan test --compact tests/Feature/Foo.php   # 單檔
+php artisan test --compact --filter=testMethodName # 單個
+
+# 格式化（每次修改 PHP 後必跑）
+vendor/bin/pint --dirty --format agent
+```
+
+## Architecture Decisions
+
+- **Multi-tenant via `workspace_id`**：所有核心 Model 都帶 `workspace_id`，查詢必須 scope 至目前 workspace。
+- **Queue for webhooks**：webhook handler 只做驗簽 + dispatch，不做業務邏輯，避免超時。
+- **Filament Admin Panel**：所有後台 UI 使用 Filament Resource / Page / Widget，禁止在 blade view 中寫複雜邏輯。
+- **PHP 8.3+ attributes**：Model 用 `#[Fillable]`、`#[Hidden]` attribute 取代陣列屬性（參考 `app/Models/User.php`）。
+- **Action Classes**：獨立業務邏輯請放在 `app/Actions/` 中的 invokable class，不要堆在 Controller。
+
+## File Conventions
+
+| 類型 | 路徑 |
+|------|------|
+| Filament Resources | `app/Filament/Resources/` |
+| Filament Pages | `app/Filament/Pages/` |
+| Filament Widgets | `app/Filament/Widgets/` |
+| Action Classes | `app/Actions/` |
+| Jobs | `app/Jobs/` |
+| Models | `app/Models/` |
+| Feature Tests | `tests/Feature/` |
+
+## Pitfalls
+
+- **File storage visibility**：上傳檔案預設為 `private`，需要公開存取請加 `->visibility('public')`。
+- **Filament namespace**：Action 一律用 `Filament\Actions\`，不要用 `Filament\Tables\Actions\`。
+- **Webhook 安全**：每個平台的 webhook 都必須驗簽（signature verification），未驗簽直接 `abort(403)`。
+- **前端未更新**：Filament 或 Vite 資源未反映時，執行 `npm run build` 或重啟 `composer run dev`。
+
