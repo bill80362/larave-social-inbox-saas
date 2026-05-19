@@ -30,7 +30,7 @@ Channel SHALL 有 `is_active` 欄位，停用的 Channel SHALL 不接收新訊�
 - **THEN** 系統 SHALL 回傳 HTTP 200 但不 dispatch Job，不建立任何 Message 或 Conversation
 
 ### Requirement: Display channel list for the workspace
-The system SHALL provide a read-only `ChannelResource` list page showing all channels scoped to the authenticated user's workspace. Columns SHALL include: channel name, platform badge, `platform_account_id`, active status badge, and `created_at`.
+The system SHALL provide a `ChannelResource` list page showing all channels scoped to the authenticated user's workspace. Columns SHALL include: channel name, platform badge, `platform_account_id`, active status badge, and `created_at`.
 
 #### Scenario: Agent views channel list
 - **WHEN** agent navigates to the Channels page
@@ -40,14 +40,32 @@ The system SHALL provide a read-only `ChannelResource` list page showing all cha
 - **WHEN** the channel list or any channel view is displayed
 - **THEN** the `credentials` field is never shown in any column or panel
 
-### Requirement: Channel list is read-only (no Create/Edit/Delete)
-The system SHALL disable Create, Edit, and Delete operations on `ChannelResource`. The list page SHALL have no action buttons for modifying records.
+### Requirement: Workspace admin can create a Channel
+The system SHALL allow a workspace admin to create a new Channel via the Filament admin panel, providing a name, platform, platform account ID, and platform-specific credentials.
 
-#### Scenario: No create button shown
-- **WHEN** agent visits the Channels list page
-- **THEN** there is no "New Channel" button or equivalent
+#### Scenario: Admin creates a new LINE channel
+- **WHEN** admin fills the Channel create form with valid LINE credentials and submits
+- **THEN** a new Channel record SHALL be persisted with `workspace_id` set to the admin's workspace, `platform = line`, and `credentials` encrypted
 
-#### Scenario: No row actions available
-- **WHEN** agent views the channel list rows
-- **THEN** no edit or delete action buttons appear on any row
+#### Scenario: Duplicate channel rejected
+- **WHEN** admin attempts to create a Channel with the same `(workspace_id, platform, platform_account_id)` as an existing Channel
+- **THEN** the form SHALL show a validation error and no new record is created
+
+### Requirement: Workspace admin can edit a Channel
+The system SHALL allow a workspace admin to edit an existing Channel's name, `platform_account_id`, credentials, and `is_active` status.
+
+#### Scenario: Admin updates channel access token
+- **WHEN** admin opens an existing Channel, changes `channel_access_token`, and saves
+- **THEN** the `credentials` column SHALL be updated with the new encrypted JSON containing the revised token
+
+#### Scenario: Admin deactivates a channel via edit form
+- **WHEN** admin opens an existing Channel and toggles `is_active` to false
+- **THEN** the Channel record SHALL have `is_active = false` and webhook handler SHALL no longer dispatch jobs for it
+
+### Requirement: Workspace admin can delete a Channel
+The system SHALL allow a workspace admin to delete a Channel via a confirmation modal. Deleting a Channel SHALL also cascade-delete its associated Conversations and Messages.
+
+#### Scenario: Admin deletes a channel with confirmation
+- **WHEN** admin clicks Delete on a Channel and confirms the modal
+- **THEN** the Channel record SHALL be removed from the database
 

@@ -54,11 +54,11 @@ class ChannelListTest extends TestCase
             ->assertCanNotSeeTableRecords([$otherChannel]);
     }
 
-    public function test_no_create_header_action_available(): void
+    public function test_create_header_action_is_available(): void
     {
         $component = Livewire::test(ListChannels::class);
 
         $actions = $component->instance()->getCachedHeaderActions();
-        $this->assertEmpty($actions);
+        $this->assertNotEmpty($actions);
     }
 }

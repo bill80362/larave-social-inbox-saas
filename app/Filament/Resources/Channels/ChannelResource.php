@@ -3,16 +3,26 @@
 namespace App\Filament\Resources\Channels;
 
 use App\Enums\Platform;
+use App\Filament\Resources\Channels\Pages\CreateChannel;
+use App\Filament\Resources\Channels\Pages\EditChannel;
 use App\Filament\Resources\Channels\Pages\ListChannels;
 use App\Models\Channel;
 use BackedEnum;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\BadgeColumn;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Validation\Rules\Unique;
 use UnitEnum;
 
 class ChannelResource extends Resource
@@ -29,7 +39,88 @@ class ChannelResource extends Resource
 
     public static function form(Schema $schema): Schema
     {
-        return $schema->components([]);
+        return $schema->components([
+            TextInput::make('name')
+                ->label('頻道名稱')
+                ->required()
+                ->maxLength(255),
+
+            Select::make('platform')
+                ->label('平台')
+                ->options(collect(Platform::cases())->mapWithKeys(fn (Platform $p) => [$p->value => $p->label()]))
+                ->required()
+                ->live()
+                ->afterStateUpdated(function (Set $set) {
+                    $set('channel_secret', null);
+                    $set('channel_access_token', null);
+                    $set('destination', null);
+                    $set('verify_token', null);
+                    $set('page_access_token', null);
+                    $set('access_token', null);
+                    $set('account_id', null);
+                }),
+
+            TextInput::make('platform_account_id')
+                ->label('平台帳號 ID')
+                ->required()
+                ->maxLength(255)
+                ->unique(
+                    table: Channel::class,
+                    column: 'platform_account_id',
+                    ignoreRecord: true,
+                    modifyRuleUsing: fn (Unique $rule, Get $get) => $rule
+                        ->where('workspace_id', auth()->user()?->workspace_id)
+                        ->where('platform', $get('platform'))
+                ),
+
+            // LINE credentials
+            TextInput::make('channel_secret')
+                ->label('Channel Secret')
+                ->visible(fn (Get $get): bool => $get('platform') === Platform::Line->value)
+                ->maxLength(255),
+
+            TextInput::make('channel_access_token')
+                ->label('Channel Access Token')
+                ->password()
+                ->revealable()
+                ->visible(fn (Get $get): bool => $get('platform') === Platform::Line->value)
+                ->maxLength(1024),
+
+            TextInput::make('destination')
+                ->label('Destination (LINE User ID)')
+                ->visible(fn (Get $get): bool => $get('platform') === Platform::Line->value)
+                ->maxLength(255),
+
+            // Facebook / Instagram credentials
+            TextInput::make('verify_token')
+                ->label('Verify Token')
+                ->visible(fn (Get $get): bool => in_array($get('platform'), [Platform::Facebook->value, Platform::Instagram->value]))
+                ->maxLength(255),
+
+            TextInput::make('page_access_token')
+                ->label('Page Access Token')
+                ->password()
+                ->revealable()
+                ->visible(fn (Get $get): bool => in_array($get('platform'), [Platform::Facebook->value, Platform::Instagram->value]))
+                ->maxLength(1024),
+
+            // Google Business credentials
+            TextInput::make('access_token')
+                ->label('Access Token')
+                ->password()
+                ->revealable()
+                ->visible(fn (Get $get): bool => $get('platform') === Platform::GoogleBusiness->value)
+                ->maxLength(1024),
+
+            TextInput::make('account_id')
+                ->label('Account ID')
+                ->visible(fn (Get $get): bool => $get('platform') === Platform::GoogleBusiness->value)
+                ->maxLength(255),
+
+            Toggle::make('is_active')
+                ->label('啟用中')
+                ->default(true),
+        ]);
     }
 
     public static function table(Table $table): Table
@@ -64,8 +155,10 @@ class ChannelResource extends Resource
                     ->sortable(),
             ])
             ->filters([])
-            ->recordActions([])
-            ->toolbarActions([]);
+            ->recordActions([
+                EditAction::make(),
+                DeleteAction::make(),
+            ]);
     }
 
     public static function getRelations(): array
@@ -77,6 +170,8 @@ class ChannelResource extends Resource
     {
         return [
             'index' => ListChannels::route('/'),
+            'create' => CreateChannel::route('/create'),
+            'edit' => EditChannel::route('/{record}/edit'),
         ];
     }
 }
