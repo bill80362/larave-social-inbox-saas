@@ -8,6 +8,7 @@ use App\Filament\Resources\Channels\Pages\EditChannel;
 use App\Filament\Resources\Channels\Pages\ListChannels;
 use App\Models\Channel;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
@@ -76,11 +77,27 @@ class ChannelResource extends Resource
             // LINE credentials
             TextInput::make('channel_secret')
                 ->label('Channel Secret')
+                ->helperText('LINE Developers Console → 選擇 Messaging API Channel → Basic Settings → Channel Secret')
+                ->hintAction(
+                    Action::make('line_console_secret')
+                        ->label('LINE Developers Console')
+                        ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                        ->url('https://developers.line.biz/')
+                        ->openUrlInNewTab()
+                )
                 ->visible(fn (Get $get): bool => $get('platform') === Platform::Line->value)
                 ->maxLength(255),
 
             TextInput::make('channel_access_token')
                 ->label('Channel Access Token')
+                ->helperText('LINE Developers Console → Messaging API → Channel access token → Issue')
+                ->hintAction(
+                    Action::make('line_console_token')
+                        ->label('LINE Developers Console')
+                        ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                        ->url('https://developers.line.biz/')
+                        ->openUrlInNewTab()
+                )
                 ->password()
                 ->revealable()
                 ->visible(fn (Get $get): bool => $get('platform') === Platform::Line->value)
@@ -88,17 +105,27 @@ class ChannelResource extends Resource
 
             TextInput::make('destination')
                 ->label('Destination (LINE User ID)')
+                ->helperText('LINE Official Account 的系統 User ID，格式為 U 開頭的 33 位字元，可在 Messaging API 設定頁找到')
                 ->visible(fn (Get $get): bool => $get('platform') === Platform::Line->value)
                 ->maxLength(255),
 
             // Facebook / Instagram credentials
             TextInput::make('verify_token')
                 ->label('Verify Token')
+                ->helperText('自訂的隨機字串，設定 Webhook 時填入相同值供 Meta 驗簽使用')
                 ->visible(fn (Get $get): bool => in_array($get('platform'), [Platform::Facebook->value, Platform::Instagram->value]))
                 ->maxLength(255),
 
             TextInput::make('page_access_token')
                 ->label('Page Access Token')
+                ->helperText('Meta for Developers → Graph API Explorer → 選擇粉絲專頁 → Generate Access Token')
+                ->hintAction(
+                    Action::make('meta_explorer')
+                        ->label('Graph API Explorer')
+                        ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                        ->url('https://developers.facebook.com/tools/explorer/')
+                        ->openUrlInNewTab()
+                )
                 ->password()
                 ->revealable()
                 ->visible(fn (Get $get): bool => in_array($get('platform'), [Platform::Facebook->value, Platform::Instagram->value]))
@@ -107,6 +134,14 @@ class ChannelResource extends Resource
             // Google Business credentials
             TextInput::make('access_token')
                 ->label('Access Token')
+                ->helperText('Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client → 產生存取權杖')
+                ->hintAction(
+                    Action::make('google_console')
+                        ->label('Google Cloud Console')
+                        ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                        ->url('https://console.cloud.google.com/apis/credentials')
+                        ->openUrlInNewTab()
+                )
                 ->password()
                 ->revealable()
                 ->visible(fn (Get $get): bool => $get('platform') === Platform::GoogleBusiness->value)
@@ -114,6 +149,14 @@ class ChannelResource extends Resource
 
             TextInput::make('account_id')
                 ->label('Account ID')
+                ->helperText('Google Business Profile Manager → 點選據點 → 網址列中的數字 ID')
+                ->hintAction(
+                    Action::make('google_business')
+                        ->label('Business Profile Manager')
+                        ->icon(Heroicon::OutlinedArrowTopRightOnSquare)
+                        ->url('https://business.google.com/')
+                        ->openUrlInNewTab()
+                )
                 ->visible(fn (Get $get): bool => $get('platform') === Platform::GoogleBusiness->value)
                 ->maxLength(255),
 
